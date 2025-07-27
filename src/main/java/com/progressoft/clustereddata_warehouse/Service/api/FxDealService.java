@@ -5,5 +5,4 @@ import com.progressoft.clustereddata_warehouse.dto.response.FxDealResponseDto;
 
 public interface FxDealService {
     FxDealResponseDto save(FxDealRequestDto requestDto);
-
 }
