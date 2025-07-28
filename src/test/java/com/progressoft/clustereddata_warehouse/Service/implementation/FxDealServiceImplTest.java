@@ -19,10 +19,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.*;
+
+
+
 
 @ExtendWith(MockitoExtension.class)
 class FxDealServiceImplTest {
@@ -70,8 +73,9 @@ class FxDealServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should save deal successfully")
-    void save_WithValidRequest_ShouldReturnResponse() {
+    @DisplayName("Given valid request when save then should return response successfully")
+    void givenValidRequest_whenSave_thenShouldReturnResponseSuccessfully() {
+
         when(fxDealRepository.existsById("DEAL123")).thenReturn(false);
         when(fxDealMapper.toEntity(requestDto)).thenReturn(fxDeal);
         when(fxDealRepository.save(fxDeal)).thenReturn(fxDeal);
@@ -80,10 +84,11 @@ class FxDealServiceImplTest {
 
         FxDealResponseDto result = fxDealService.save(requestDto);
 
-        assertNotNull(result);
-        assertEquals("DEAL123", result.id());
-        assertEquals("USD", result.fromCurrency());
-        assertEquals("EUR", result.toCurrency());
+
+        assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo("DEAL123");
+        assertThat(result.fromCurrency()).isEqualTo("USD");
+        assertThat(result.toCurrency()).isEqualTo("EUR");
 
         verify(currencyVerifier).validate("USD", "EUR");
         verify(fxDealRepository).existsById("DEAL123");
@@ -93,17 +98,15 @@ class FxDealServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw exception when currency validation fails")
-    void save_WithInvalidCurrency_ShouldThrowException() {
+    @DisplayName("Given invalid currency when save then should throw InvalidCurrencyException")
+    void givenInvalidCurrency_whenSave_thenShouldThrowInvalidCurrencyException() {
 
         doThrow(new InvalidCurrencyException("Invalid currency")).when(currencyVerifier)
                 .validate("USD", "EUR");
 
-
-        InvalidCurrencyException exception = assertThrows(InvalidCurrencyException.class,
-                () -> fxDealService.save(requestDto));
-
-        assertEquals("Invalid currency", exception.getMessage());
+        assertThatExceptionOfType(InvalidCurrencyException.class)
+                .isThrownBy(() -> fxDealService.save(requestDto))
+                .withMessage("Invalid currency");
 
         verify(currencyVerifier).validate("USD", "EUR");
         verify(fxDealRepository, never()).existsById(anyString());
@@ -113,17 +116,15 @@ class FxDealServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw exception when deal ID already exists")
-    void save_WithDuplicateId_ShouldThrowException() {
+    @DisplayName("Given duplicate deal ID when save then should throw DuplicateDealException")
+    void givenDuplicateDealId_whenSave_thenShouldThrowDuplicateDealException() {
 
         when(fxDealRepository.existsById("DEAL123")).thenReturn(true);
 
 
-        DuplicateDealException exception = assertThrows(DuplicateDealException.class,
-                () -> fxDealService.save(requestDto));
-
-        assertEquals("A deal with ID 'DEAL123' already exists.", exception.getMessage());
-
+        assertThatExceptionOfType(DuplicateDealException.class)
+                .isThrownBy(() -> fxDealService.save(requestDto))
+                .withMessage("A deal with ID 'DEAL123' already exists.");
 
         verify(currencyVerifier).validate("USD", "EUR");
         verify(fxDealRepository).existsById("DEAL123");
@@ -133,19 +134,17 @@ class FxDealServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should handle repository exception during save")
-    void save_WithRepositoryException_ShouldThrowException() {
+    @DisplayName("Given repository exception during save when save then should throw RuntimeException")
+    void givenRepositoryExceptionDuringSave_whenSave_thenShouldThrowRuntimeException() {
 
         when(fxDealRepository.existsById("DEAL123")).thenReturn(false);
         when(fxDealMapper.toEntity(requestDto)).thenReturn(fxDeal);
         when(fxDealRepository.save(fxDeal)).thenThrow(new RuntimeException("Database error"));
 
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> fxDealService.save(requestDto));
-
-        assertEquals("Database error", exception.getMessage());
-
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> fxDealService.save(requestDto))
+                .withMessage("Database error");
 
         verify(currencyVerifier).validate("USD", "EUR");
         verify(fxDealRepository).existsById("DEAL123");
@@ -155,18 +154,16 @@ class FxDealServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should handle mapper exception during entity conversion")
-    void save_WithMapperExceptionDuringEntityConversion_ShouldThrowException() {
+    @DisplayName("Given mapper exception during entity conversion when save then should throw RuntimeException")
+    void givenMapperExceptionDuringEntityConversion_whenSave_thenShouldThrowRuntimeException() {
 
         when(fxDealRepository.existsById("DEAL123")).thenReturn(false);
         when(fxDealMapper.toEntity(requestDto)).thenThrow(new RuntimeException("Mapping error"));
 
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> fxDealService.save(requestDto));
-
-        assertEquals("Mapping error", exception.getMessage());
-
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> fxDealService.save(requestDto))
+                .withMessage("Mapping error");
 
         verify(currencyVerifier).validate("USD", "EUR");
         verify(fxDealRepository).existsById("DEAL123");
@@ -176,8 +173,8 @@ class FxDealServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should handle mapper exception during response conversion")
-    void save_WithMapperExceptionDuringResponseConversion_ShouldThrowException() {
+    @DisplayName("Given mapper exception during response conversion when save then should throw RuntimeException")
+    void givenMapperExceptionDuringResponseConversion_whenSave_thenShouldThrowRuntimeException() {
 
         when(fxDealRepository.existsById("DEAL123")).thenReturn(false);
         when(fxDealMapper.toEntity(requestDto)).thenReturn(fxDeal);
@@ -185,11 +182,9 @@ class FxDealServiceImplTest {
         when(fxDealMapper.toResponseDto(fxDeal)).thenThrow(new RuntimeException("Response mapping error"));
 
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> fxDealService.save(requestDto));
-
-        assertEquals("Response mapping error", exception.getMessage());
-
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> fxDealService.save(requestDto))
+                .withMessage("Response mapping error");
 
         verify(currencyVerifier).validate("USD", "EUR");
         verify(fxDealRepository).existsById("DEAL123");
@@ -199,26 +194,13 @@ class FxDealServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should verify constructor with all dependencies")
-    void constructor_WithAllDependencies_ShouldCreateInstance() {
+    @DisplayName("Given all dependencies when constructor called then should create instance successfully")
+    void givenAllDependencies_whenConstructorCalled_thenShouldCreateInstanceSuccessfully() {
 
         FxDealServiceImpl service = new FxDealServiceImpl(fxDealRepository, fxDealMapper, currencyVerifier);
 
-        assertNotNull(service);
+
+        assertThat(service).isNotNull();
     }
 
-    @Test
-    @DisplayName("Should log processing and success messages")
-    void save_ShouldLogProcessingAndSuccessMessages() {
-
-        when(fxDealRepository.existsById("DEAL123")).thenReturn(false);
-        when(fxDealMapper.toEntity(requestDto)).thenReturn(fxDeal);
-        when(fxDealRepository.save(fxDeal)).thenReturn(fxDeal);
-        when(fxDealMapper.toResponseDto(fxDeal)).thenReturn(responseDto);
-
-        fxDealService.save(requestDto);
-
-
-        verify(fxDealRepository).save(fxDeal);
-    }
 }
